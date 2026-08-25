@@ -4,12 +4,18 @@ export namespace AuthApi {
   /** 登录接口参数 */
   export interface LoginParams {
     password?: string;
+    phone?: string;
     username?: string;
   }
 
   /** 登录接口返回值 */
   export interface LoginResult {
-    accessToken: string;
+    access_token: string;
+    accessToken?: string;
+    admin_id?: number;
+    phone?: string;
+    roles?: string[];
+    token_type?: string;
   }
 
   export interface RefreshTokenResult {
@@ -22,7 +28,10 @@ export namespace AuthApi {
  * 登录
  */
 export async function loginApi(data: AuthApi.LoginParams) {
-  return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+  return requestClient.post<AuthApi.LoginResult>('/admin/login', {
+    password: data.password,
+    phone: data.phone || data.username,
+  });
 }
 
 /**

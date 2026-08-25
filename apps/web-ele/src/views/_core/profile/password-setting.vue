@@ -1,34 +1,41 @@
 <script setup lang="ts">
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 import { ProfilePasswordSetting, z } from '@vben/common-ui';
 
 import { ElMessage } from 'element-plus';
 
+import { changeAdminPasswordApi } from '#/api';
+
+const profilePasswordSettingRef = ref();
+
 const formSchema = computed((): VbenFormSchema[] => {
   return [
     {
-      fieldName: 'oldPassword',
-      label: '旧密码',
       component: 'VbenInputPassword',
       componentProps: {
         placeholder: '请输入旧密码',
       },
+      fieldName: 'oldPassword',
+      label: '旧密码',
+      rules: z.string().min(1, { message: '请输入旧密码' }),
     },
     {
-      fieldName: 'newPassword',
-      label: '新密码',
       component: 'VbenInputPassword',
       componentProps: {
         passwordStrength: true,
         placeholder: '请输入新密码',
       },
+      fieldName: 'newPassword',
+      label: '新密码',
+      rules: z
+        .string()
+        .min(6, { message: '新密码长度不能少于 6 位' })
+        .max(30, { message: '新密码长度不能超过 30 位' }),
     },
     {
-      fieldName: 'confirmPassword',
-      label: '确认密码',
       component: 'VbenInputPassword',
       componentProps: {
         passwordStrength: true,
@@ -46,18 +53,32 @@ const formSchema = computed((): VbenFormSchema[] => {
         },
         triggerFields: ['newPassword'],
       },
+      fieldName: 'confirmPassword',
+      label: '确认密码',
     },
   ];
 });
 
-function handleSubmit() {
-  ElMessage.success('密码修改成功');
+async function handleSubmit(values: Record<string, any>) {
+  try {
+    await changeAdminPasswordApi({
+      confirmPassword: values.confirmPassword,
+      newPassword: values.newPassword,
+      oldPassword: values.oldPassword,
+    });
+    ElMessage.success('密码修改成功');
+    profilePasswordSettingRef.value?.getFormApi()?.resetForm();
+  } catch (error: any) {
+    ElMessage.error(error?.message || '修改密码失败');
+  }
 }
 </script>
 <template>
   <ProfilePasswordSetting
-    class="w-1/3"
+    ref="profilePasswordSettingRef"
+    class="w-full md:w-1/2"
     :form-schema="formSchema"
     @submit="handleSubmit"
   />
 </template>
+

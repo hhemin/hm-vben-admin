@@ -10,7 +10,7 @@ import { resetAllStores, useAccessStore, useUserStore } from '@vben/stores';
 import { ElNotification } from 'element-plus';
 import { defineStore } from 'pinia';
 
-import { getAccessCodesApi, getUserInfoApi, loginApi, logoutApi } from '#/api';
+import { getUserInfoApi, loginApi, logoutApi } from '#/api';
 import { $t } from '#/locales';
 
 export const useAuthStore = defineStore('auth', () => {
@@ -33,23 +33,37 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { accessToken } = await loginApi(params);
+      const res = await loginApi(params);
+      const token = res.access_token || res.accessToken;
 
       // 如果成功获取到 accessToken
-      if (accessToken) {
+      if (token) {
         // 将 accessToken 存储到 accessStore 中
-        accessStore.setAccessToken(accessToken);
+        accessStore.setAccessToken(token);
 
-        // 获取用户信息并存储到 accessStore 中
-        const [fetchUserInfoResult, accessCodes] = await Promise.all([
-          fetchUserInfo(),
-          getAccessCodesApi(),
-        ]);
+        // 如果后端登录返回了 roles，直接写入 accessCodes / roles
+        if (res.roles && Array.isArray(res.roles)) {
+          accessStore.setAccessCodes(res.roles);
+        }
 
-        userInfo = fetchUserInfoResult;
-
-        userStore.setUserInfo(userInfo);
-        accessStore.setAccessCodes(accessCodes);
+        // 获取详细用户信息
+        try {
+          const fetchUserInfoResult = await fetchUserInfo();
+          userInfo = fetchUserInfoResult;
+        } catch {
+          // 如果 /admin/users/info 暂时不可用，用登录返回的信息做兜底
+          userInfo = {
+            avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+            desc: '',
+            homePath: preferences.app.defaultHomePath,
+            realName: res.phone || 'Admin',
+            roles: res.roles || ['admin'],
+            token,
+            userId: String(res.admin_id || 1),
+            username: res.phone || 'Admin',
+          } as UserInfo;
+          userStore.setUserInfo(userInfo);
+        }
 
         if (accessStore.loginExpired) {
           accessStore.setLoginExpired(false);
@@ -57,13 +71,13 @@ export const useAuthStore = defineStore('auth', () => {
           onSuccess
             ? await onSuccess?.()
             : await router.push(
-                userInfo.homePath || preferences.app.defaultHomePath,
+                userInfo?.homePath || preferences.app.defaultHomePath,
               );
         }
 
-        if (userInfo?.realName) {
+        if (userInfo?.realName || userInfo?.username) {
           ElNotification({
-            message: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName}`,
+            message: `${$t('authentication.loginSuccessDesc')}:${userInfo?.realName || userInfo?.username}`,
             title: $t('authentication.loginSuccess'),
             type: 'success',
           });
@@ -99,8 +113,24 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUserInfo() {
-    const userInfo = await getUserInfoApi();
+    const rawUserInfo: any = await getUserInfoApi();
+    const userInfo: UserInfo = {
+      avatar:
+        rawUserInfo?.avatar ||
+        'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+      desc: rawUserInfo?.remark || '',
+      homePath: preferences.app.defaultHomePath,
+      realName: rawUserInfo?.employee_no || rawUserInfo?.phone || 'Admin',
+      roles: rawUserInfo?.roles || ['admin'],
+      token: accessStore.accessToken || '',
+      userId: String(rawUserInfo?.id || rawUserInfo?.admin_id || ''),
+      username: rawUserInfo?.phone || '',
+      ...rawUserInfo,
+    };
     userStore.setUserInfo(userInfo);
+    if (userInfo.roles && userInfo.roles.length > 0) {
+      accessStore.setAccessCodes(userInfo.roles);
+    }
     return userInfo;
   }
 

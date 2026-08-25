@@ -53,8 +53,8 @@ vite.config.ts.*
 .cursor
 
 # AI
-.agent
-.agents
+# .agent
+# .agents
 .claude
 .codex
 skills-lock.json

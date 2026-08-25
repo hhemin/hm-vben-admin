@@ -15,16 +15,12 @@ const authStore = useAuthStore();
 
 const MOCK_USER_OPTIONS: BasicOption[] = [
   {
-    label: 'Super',
-    value: 'vben',
+    label: '管理员 (admin)',
+    value: '17376700733',
   },
   {
-    label: 'Admin',
-    value: 'admin',
-  },
-  {
-    label: 'User',
-    value: 'jack',
+    label: '教师 (teacher)',
+    value: '13800138000',
   },
 ];
 
@@ -42,12 +38,12 @@ const formSchema = computed((): VbenFormSchema[] => {
         .string()
         .min(1, { message: $t('authentication.selectAccount') })
         .optional()
-        .default('vben'),
+        .default('17376700733'),
     },
     {
       component: 'VbenInput',
       componentProps: {
-        placeholder: $t('authentication.usernameTip'),
+        placeholder: '请输入用户名或手机号',
       },
       dependencies: {
         trigger(values, form) {
@@ -57,7 +53,7 @@ const formSchema = computed((): VbenFormSchema[] => {
             );
             if (findUser) {
               form.setValues({
-                password: '123456',
+                password: 'admin',
                 username: findUser.value,
               });
             }
@@ -67,7 +63,7 @@ const formSchema = computed((): VbenFormSchema[] => {
       },
       fieldName: 'username',
       label: $t('authentication.username'),
-      rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
+      rules: z.string().min(1, { message: '请输入用户名或手机号' }),
     },
     {
       component: 'VbenInputPassword',
