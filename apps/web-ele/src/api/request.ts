@@ -13,13 +13,47 @@ import {
 } from '@vben/request';
 import { useAccessStore } from '@vben/stores';
 
-import { ElMessage } from 'element-plus';
+import { ElLoading, ElMessage } from 'element-plus';
 
 import { useAuthStore } from '#/store';
 
 import { refreshTokenApi } from './core';
 
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
+
+// 全局 Loading 管理
+let loadingCount = 0;
+let loadingInstance: ReturnType<typeof ElLoading.service> | null = null;
+
+export function startLoading(options?: {
+  target?: HTMLElement | string;
+  text?: string;
+  background?: string;
+}) {
+  loadingCount++;
+  if (loadingCount === 1) {
+    loadingInstance = ElLoading.service({
+      fullscreen: !options?.target,
+      target: options?.target,
+      text: options?.text || '数据加载中...',
+      background: options?.background || 'rgba(0, 0, 0, 0.35)',
+    });
+  }
+}
+
+export function endLoading() {
+  if (loadingCount > 0) {
+    loadingCount--;
+  }
+  if (loadingCount === 0 && loadingInstance) {
+    setTimeout(() => {
+      if (loadingCount === 0 && loadingInstance) {
+        loadingInstance.close();
+        loadingInstance = null;
+      }
+    }, 200);
+  }
+}
 
 function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   const client = new RequestClient({
@@ -60,14 +94,27 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     return token ? `Bearer ${token}` : null;
   }
 
-  // 请求头处理
+  // 请求头及 Loading 拦截
   client.addRequestInterceptor({
     fulfilled: async (config) => {
       const accessStore = useAccessStore();
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
+
+      // 支持配置 loading / screen_loading 参数
+      if ((config as any).loading || (config as any).screen_loading) {
+        startLoading({
+          target: (config as any).loadingTarget,
+          text: (config as any).loadingText,
+        });
+      }
+
       return config;
+    },
+    rejected: async (error) => {
+      endLoading();
+      return Promise.reject(error);
     },
   });
 
@@ -90,6 +137,28 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       formatToken,
     }),
   );
+
+  // 响应结束关闭 Loading
+  client.addResponseInterceptor({
+    fulfilled: async (response) => {
+      if (
+        (response.config as any)?.loading ||
+        (response.config as any)?.screen_loading
+      ) {
+        endLoading();
+      }
+      return response;
+    },
+    rejected: async (error) => {
+      if (
+        (error?.config as any)?.loading ||
+        (error?.config as any)?.screen_loading
+      ) {
+        endLoading();
+      }
+      return Promise.reject(error);
+    },
+  });
 
   // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(

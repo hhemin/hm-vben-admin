@@ -1,67 +1,117 @@
 import { requestClient } from '#/api/request';
 
 export interface UserItem {
-  address?: string;
-  avatar?: string;
-  created_at?: string;
-  email?: string;
   id: number;
   phone: string;
+  username?: string;
+  email?: string;
+  id_card?: string;
+  gender?: number; // 0=未知, 1=男, 2=女
+  address?: string;
+  avatar?: string;
+  is_active?: boolean;
   roles?: string[];
-  status?: number;
+  created_at?: string;
   updated_at?: string;
-  username: string;
 }
 
 export interface UserQueryParams {
   page?: number;
   pageSize?: number;
+  pageNum?: number;
+  limit?: number;
   phone?: string;
-  role?: string;
   username?: string;
 }
 
+export interface UserCreatePayload {
+  phone: string;
+  password: string;
+  username?: string;
+  email?: string;
+  id_card?: string;
+  gender?: number;
+  address?: string;
+  avatar?: string;
+  roles?: string[];
+}
+
+export interface UserUpdatePayload {
+  phone?: string;
+  password?: string;
+  username?: string;
+  email?: string;
+  id_card?: string;
+  gender?: number;
+  address?: string;
+  avatar?: string;
+  is_active?: boolean;
+  roles?: string[];
+}
+
 /**
- * 获取用户列表
+ * 分页及条件检索用户列表
  */
 export async function getUsersApi(params?: UserQueryParams) {
-  return requestClient.get<UserItem[]>('/admin/users', {
+  return requestClient.get<{
+    items: UserItem[];
+    count: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }>('/admin/users/', {
     params,
   });
 }
 
+/**
+ * 创建新用户
+ */
+export async function createUserApi(data: UserCreatePayload) {
+  return requestClient.post<UserItem>('/admin/users/', data);
+}
 
 /**
- * 获取指定用户信息
+ * 获取指定用户详情
  */
-export async function getUserByIdApi(id: number | string) {
-  return requestClient.get<UserItem>(`/admin/users/${id}`);
+export async function getUserByIdApi(userId: number | string) {
+  return requestClient.get<UserItem>(`/admin/users/${userId}`);
 }
 
 /**
  * 更新指定用户信息
  */
-export async function updateUserApi(id: number | string, data: Partial<UserItem>) {
-  return requestClient.put<UserItem>(`/admin/users/${id}`, data);
-}
-
-/**
- * 更新当前登录用户信息
- */
-export async function updateMeApi(data: Partial<UserItem>) {
-  return requestClient.put<UserItem>('/admin/users/info', data);
+export async function updateUserApi(
+  userId: number | string,
+  data: UserUpdatePayload,
+) {
+  return requestClient.put<UserItem>(`/admin/users/${userId}`, data);
 }
 
 /**
  * 删除用户
  */
-export async function deleteUserApi(id: number | string) {
-  return requestClient.delete(`/admin/users/${id}`);
+export async function deleteUserApi(userId: number | string) {
+  return requestClient.delete(`/admin/users/${userId}`);
 }
 
 /**
- * 注册/新增用户
+ * 批量导入用户
  */
-export async function registerUserApi(data: Partial<UserItem>) {
-  return requestClient.post<UserItem>('/admin/users', data);
+export async function batchCreateUsersApi(users: UserCreatePayload[]) {
+  return requestClient.post('/admin/users/batch', { users });
+}
+
+/**
+ * 获取当前登录管理员个人信息
+ */
+export async function getAdminInfoApi() {
+  return requestClient.get<UserItem>('/admin/users/info');
+}
+
+/**
+ * 更新当前登录管理员个人信息
+ */
+export async function updateMeApi(data: Partial<UserItem>) {
+  return requestClient.put<UserItem>('/admin/users/info', data);
 }
