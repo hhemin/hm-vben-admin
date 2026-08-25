@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "dev:ele",
+      "problemMatcher": [],
+      "label": "npm: dev:ele",
+      "detail": "pnpm -F @vben/web-ele run dev",
+      "options": {
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": ["-i", "-c"]
+        }
+      }
+    },
+    {
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "label": "npm: dev",
+      "detail": "turbo-run dev",
+      "options": {
+        "shell": {
+          "executable": "/bin/zsh",
+          "args": ["-i", "-c"]
+        }
+      }
+    }
+  ]
+}
