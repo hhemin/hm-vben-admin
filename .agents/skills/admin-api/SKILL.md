@@ -1,17 +1,18 @@
 ---
 name: 后台管理系统 API 接口规范
-keywords: admin api, fastapi, users, response format, token, request
+description: FastAPI 后端接口对接规范、统一响应结构、Token 鉴权、用户与后台人员管理 CRUD 接口定义与前端调用标准。
+keywords: admin api, fastapi, users, admin-users, response format, token, request, crud
 ---
 
 # Admin API 接口与集成规范
 
-本 Skill 定义了 `hm_admin_template` 管理后台与 Python FastAPI 后端 (`http://localhost:8000`) 的真实 API 接口对接规范、响应格式约束及前端调用方法。
+本 Skill 定义了 `hm-vben-admin` 管理后台与 Python FastAPI 后端 (`http://localhost:8000`) 的真实 API 接口对接规范、响应格式约束及前端调用方法。
 
 ---
 
-## 1. 后端统一响应格式 (Python Response Standard)
+## 1. 后端统一响应格式 (FastAPI Response Standard)
 
-后端通过 `src/utils/response.py` 统一封装返回数据字典格式，格式如下：
+后端通过 `src/utils/response.py` 统一封装返回数据字典格式：
 
 ### 成功响应结构 (200, 201, 202, 204)
 ```json
@@ -40,8 +41,8 @@ keywords: admin api, fastapi, users, response format, token, request
 ### 错误响应结构 (400, 401, 403, 404, 422, 500 等)
 ```json
 {
-  "code": 401,
-  "msg": "未授权 / Token 已过期",
+  "code": 1001,
+  "msg": "错误提示信息",
   "data": null
 }
 ```
@@ -50,73 +51,53 @@ keywords: admin api, fastapi, users, response format, token, request
 
 ## 2. 管理后台 API 接口清单 (`/admin/*`)
 
-后台所有接口前缀均为 `/admin`，完整的 OpenAPI 格式文档参见 `http://localhost:8000/openapi.json`。
+完整 OpenAPI 格式规范文档参见 `http://localhost:8000/openapi.json`。
 
 ### 认证接口 (Authentication)
-- **POST `/admin/login`**
-  - **描述**: 管理员登录
-  - **请求体 (JSON)**: `{"phone": "手机号", "password": "密码"}`
-  - **响应**: `{"code": 200, "msg": "请求成功", "data": {"access_token": "JWT_TOKEN", "token_type": "bearer"}}`
+- **POST `/admin/login`**：管理员登录（参数：`phone`, `password`）
+- **GET `/admin/me`**：获取当前登录管理员/教师个人信息
+- **PUT `/admin/profile`**：更新当前登录管理员个人信息
+- **POST `/admin/change-password`**：修改当前登录管理员密码
 
-### 管理员个人中心 (Admin Self Management)
-- **GET `/admin/users/info`**
-  - **描述**: 获取当前登录管理员个人信息 (需 Header `Authorization: Bearer <Token>`)
-  - **响应**: `{"code": 200, "msg": "请求成功", "data": {"id": 1, "username": "admin", "phone": "...", "avatar": "..."}}`
-- **PUT `/admin/users/info`**
-  - **描述**: 更新当前登录管理员个人信息
-  - **请求体 (JSON)**: `UserUpdate` 结构（可更新 username, email, avatar, password 等）
+### 用户管理接口 (User Management - 前台普通用户)
+- **GET `/admin/users/`**：[管理员] 分页及条件检索用户列表（参数：`phone`, `username`, `page/pageNum`, `pageSize/limit`）
+- **POST `/admin/users/`**：[管理员] 创建新用户（参数：`phone`, `password`, `username`, `email`, `id_card`, `gender`, `address`, `roles`）
+- **GET `/admin/users/{user_id}`**：[管理员] 获取指定用户详情
+- **PUT `/admin/users/{user_id}`**：[管理员] 更新指定用户信息 (可修改 `is_active` 状态)
+- **DELETE `/admin/users/{user_id}`**：[管理员] 删除用户
+- **POST `/admin/users/batch`**：[管理员] 批量导入用户
 
-### 用户管理接口 (User Management)
-- **GET `/admin/users/`**
-  - **描述**: [管理员] 分页查询用户列表
-  - **Query 参数**: `pageNum` (默认 1), `pageSize` (默认 10)
-  - **响应**: 统一 `page_response` 格式
-- **POST `/admin/users/`**
-  - **描述**: [管理员] 创建新用户
-  - **请求体 (JSON)**: `{"phone": "...", "password": "...", "username": "...", ...}`
-- **GET `/admin/users/{user_id}`**
-  - **描述**: [管理员] 根据 ID 查询指定用户详情
-- **PUT `/admin/users/{user_id}`**
-  - **描述**: [管理员] 更新指定用户信息 (可修改 `is_active` 状态)
-- **DELETE `/admin/users/{user_id}`**
-  - **描述**: [管理员] 删除指定用户
-- **POST `/admin/users/batch`**
-  - **描述**: [管理员] 批量导入用户
+### 人员管理接口 (Staff Management - 后台管理/教职人员)
+- **GET `/admin/admin-users/`**：[管理员] 分页及条件检索后台人员列表（参数：`phone`, `employee_no`, `status`, `page/pageNum`, `pageSize/limit`）
+- **POST `/admin/admin-users/`**：[管理员] 创建后台人员（参数：`phone`, `employee_no`, `password`, `roles`, `category`, `remark`, `status`）
+- **GET `/admin/admin-users/{admin_id}`**：[管理员] 获取指定后台人员详情
+- **PUT `/admin/admin-users/{admin_id}`**：[管理员] 更新后台人员信息（支持工号、角色、部门、状态等全量/增量更新）
+- **DELETE `/admin/admin-users/{admin_id}`**：[管理员] 删除后台人员
 
 ---
 
 ## 3. 前端网络请求封装与使用规约
 
-### 请求拦截器规约 ([src/utils/request.ts](file:///Users/myself/Desktop/web/hm_admin_template/src/utils/request.ts))
-1. **网络代理配置**:开发服务器通过 `vue.config.js` 的 `devServer.proxy` 代理 `/dev-api` 到 `http://127.0.0.1:8000`。
-2. **Token 携带**: 每一个需要鉴权的请求，均需要在 Header 自动携带 `Authorization: Bearer <Token>`。
-3. **状态码校验**: 允许 `res.code` 为 `200`, `201`, `202`, `204` 表示逻辑成功；遇到 `401` 触发登出弹窗并重定向至登录页。
+### 请求拦截器规约 ([src/api/request.ts](file:///Users/myself/Desktop/myself/hm-vben-admin/apps/web-ele/src/api/request.ts))
+1. **Token 携带**：所有受保护接口通过请求拦截器自动附加 `Authorization: Bearer <Token>`。
+2. **状态码校验**：基于 `defaultResponseInterceptor`，当 `code: 200` 时自动解包返回 `data` 节点。
+3. **Loading 联动**：支持在请求配置中开启 `loading: true` / `screen_loading: true` 自动管理全屏加载遮罩。
 
-### 前端 API 文件标准 ([src/api/users.ts](file:///Users/myself/Desktop/web/hm_admin_template/src/api/users.ts))
-所有后台用户与认证相关调用函数需保持如下写法：
+### 前端 API 文件编写范式 ([src/api/users.ts](file:///Users/myself/Desktop/myself/hm-vben-admin/apps/web-ele/src/api/users.ts))
 ```typescript
-import request from '@/utils/request'
+import { requestClient } from '#/api/request';
 
-export const login = (data: { phone?: string, username?: string, password: string }) =>
-  request({
-    url: '/admin/login',
-    method: 'post',
-    data: {
-      phone: data.phone || data.username,
-      password: data.password
-    }
-  })
+export interface UserItem {
+  id: number;
+  phone: string;
+  username?: string;
+  is_active?: boolean;
+  roles?: string[];
+}
 
-export const getUserInfo = () =>
-  request({
-    url: '/admin/users/info',
-    method: 'get'
-  })
-
-export const getUsers = (params?: any) =>
-  request({
-    url: '/admin/users',
-    method: 'get',
-    params
-  })
+export async function getUsersApi(params?: Record<string, any>) {
+  return requestClient.get<{ items: UserItem[]; count: number }>('/admin/users/', {
+    params,
+  });
+}
 ```
