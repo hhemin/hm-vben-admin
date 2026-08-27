@@ -62,20 +62,33 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   });
 
   /**
-   * 重新认证逻辑
+   * 重新认证逻辑（防重/单例锁，防止并发 401 接口多次触发跳转登录页）
    */
+  let isReAuthenticating = false;
+
   async function doReAuthenticate() {
+    if (isReAuthenticating) {
+      return;
+    }
+    isReAuthenticating = true;
     console.warn('Access token or refresh token is invalid or expired. ');
     const accessStore = useAccessStore();
     const authStore = useAuthStore();
     accessStore.setAccessToken(null);
-    if (
-      preferences.app.loginExpiredMode === 'modal' &&
-      accessStore.isAccessChecked
-    ) {
-      accessStore.setLoginExpired(true);
-    } else {
-      await authStore.logout();
+    try {
+      if (
+        preferences.app.loginExpiredMode === 'modal' &&
+        accessStore.isAccessChecked
+      ) {
+        accessStore.setLoginExpired(true);
+      } else {
+        await authStore.logout();
+      }
+    } finally {
+      // 保持防重锁，防止跳转/重定向期间后续并发接口重复触发 logout
+      setTimeout(() => {
+        isReAuthenticating = false;
+      }, 3000);
     }
   }
 
@@ -138,6 +151,20 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     }),
   );
 
+  // 业务 code 401 (如 {"code":401,"msg":"token已过期","data":null}) token过期处理
+  client.addResponseInterceptor({
+    rejected: async (error) => {
+      const responseData = error?.response?.data;
+      const status = error?.response?.status;
+      const code = responseData?.code;
+
+      if (code === 401 || status === 401) {
+        await doReAuthenticate();
+      }
+      return Promise.reject(error);
+    },
+  });
+
   // 响应结束关闭 Loading
   client.addResponseInterceptor({
     fulfilled: async (response) => {
@@ -163,15 +190,21 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(
     errorMessageResponseInterceptor((msg: string, error) => {
-      // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
       const responseData = error?.response?.data ?? {};
+      const status = error?.response?.status;
+      const code = responseData?.code;
+
+      // 若为 401 token 过期或正在重定向登录中，忽略弹窗提示，防止多个并发接口触发多次 Toast
+      if (code === 401 || status === 401 || isReAuthenticating) {
+        return;
+      }
+
       const errorMessage =
         responseData?.msg ??
         responseData?.message ??
         responseData?.error ??
         responseData?.detail ??
         '';
-      // 如果没有错误信息，则会根据状态码进行提示
       ElMessage.error(errorMessage || msg);
     }),
   );
