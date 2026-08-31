@@ -35,38 +35,40 @@ function formatJson(data: any): string {
 
 /** 复制 JSON */
 function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success('已复制到剪贴板');
-  }).catch(() => {
-    ElMessage.error('复制失败');
-  });
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      ElMessage.success('已复制到剪贴板');
+    })
+    .catch(() => {
+      ElMessage.error('复制失败');
+    });
 }
 
-/** HTTP 方法对应的颜色类别 */
-const methodTagType = computed(() => {
-  const method = (logData.value?.method || 'GET').toUpperCase();
-  switch (method) {
-    case 'GET':
-      return 'success';
-    case 'POST':
-      return 'primary';
-    case 'PUT':
-      return 'warning';
-    case 'DELETE':
-      return 'danger';
+/** 操作人类型文本与 Tag 颜色 */
+const operatorTypeInfo = computed(() => {
+  const t = logData.value?.operatorType ?? 1;
+  switch (t) {
+    case 0:
+      return { label: '系统自动', type: 'info' as const };
+    case 1:
+      return { label: '管理员', type: 'warning' as const };
+    case 2:
+      return { label: '前台学员', type: 'success' as const };
     default:
-      return 'info';
+      return { label: '其他人员', type: 'info' as const };
   }
 });
 
-/** 状态码 Tag 类型 */
-const statusCodeType = computed(() => {
-  const code = logData.value?.status_code || 200;
-  if (code >= 200 && code < 300) return 'success';
-  if (code >= 400 && code < 500) return 'warning';
-  if (code >= 500) return 'danger';
+/** 模块 Tag 样式 */
+function getModuleTagType(moduleName?: string) {
+  if (!moduleName) return 'info';
+  if (moduleName.includes('用户') || moduleName.includes('认证')) return 'primary';
+  if (moduleName.includes('人员') || moduleName.includes('权限')) return 'warning';
+  if (moduleName.includes('课程') || moduleName.includes('活动')) return 'success';
+  if (moduleName.includes('Banner') || moduleName.includes('轮播')) return 'danger';
   return 'info';
-});
+}
 
 defineExpose({ open });
 </script>
@@ -74,8 +76,8 @@ defineExpose({ open });
 <template>
   <ElDrawer
     v-model="visible"
-    title="操作日志明细"
-    size="680px"
+    title="操作日志审计明细"
+    size="640px"
     destroy-on-close
     append-to-body
     class="operation-log-drawer"
@@ -85,20 +87,25 @@ defineExpose({ open });
       <ElCard class="!border border-border/60 !rounded-xl shadow-xs" body-class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <ElTag :type="methodTagType" effect="dark" size="large" class="!font-bold font-mono !rounded-lg">
-              {{ (logData.method || 'ACTION').toUpperCase() }}
+            <ElTag
+              :type="getModuleTagType(logData.module)"
+              effect="dark"
+              size="large"
+              class="!font-bold !rounded-lg"
+            >
+              {{ logData.module || '通用模块' }}
             </ElTag>
             <div>
               <div class="font-semibold text-foreground text-base">
-                {{ logData.operation || logData.action || '系统操作记录' }}
+                {{ logData.action || '系统业务变更' }}
               </div>
               <div class="text-xs font-mono text-muted-foreground mt-0.5">
-                ID: #{{ logData.id }} | 模块: {{ logData.module || '默认模块' }}
+                日志 ID: #{{ logData.id }}
               </div>
             </div>
           </div>
-          <ElTag v-if="logData.status_code" :type="statusCodeType" effect="light" class="font-mono font-medium">
-            HTTP {{ logData.status_code }}
+          <ElTag :type="operatorTypeInfo.type" effect="light" class="font-medium !rounded-md">
+            {{ operatorTypeInfo.label }}
           </ElTag>
         </div>
       </ElCard>
@@ -110,88 +117,81 @@ defineExpose({ open });
           审计元数据 (Metadata)
         </div>
         <ElDescriptions :column="2" border size="small" class="metadata-descriptions">
-          <ElDescriptionsItem label="操作模块">
+          <ElDescriptionsItem label="业务模块">
             <ElTag size="small" effect="plain" class="!rounded-md font-medium">
               {{ logData.module }}
             </ElTag>
           </ElDescriptionsItem>
 
-          <ElDescriptionsItem label="操作人员">
+          <ElDescriptionsItem label="具体动作">
             <span class="font-medium text-foreground">
-              {{ logData.operator_name || logData.operator || (logData.admin_id ? `Admin #${logData.admin_id}` : '系统人员') }}
+              {{ logData.action || '-' }}
             </span>
           </ElDescriptionsItem>
 
-          <ElDescriptionsItem label="IP 地址">
+          <ElDescriptionsItem label="操作人员">
+            <div class="flex items-center gap-1.5">
+              <span class="font-medium text-foreground">
+                {{ logData.operatorName || (logData.operatorId ? `ID #${logData.operatorId}` : '系统人员') }}
+              </span>
+              <span v-if="logData.operatorId" class="text-xs font-mono text-muted-foreground">
+                (#{{ logData.operatorId }})
+              </span>
+            </div>
+          </ElDescriptionsItem>
+
+          <ElDescriptionsItem label="身份类型">
+            <ElTag size="small" :type="operatorTypeInfo.type" effect="light" class="!rounded-md">
+              {{ operatorTypeInfo.label }}
+            </ElTag>
+          </ElDescriptionsItem>
+
+          <ElDescriptionsItem label="客户端 IP">
             <span class="font-mono text-xs text-foreground">
               {{ logData.ip || '127.0.0.1' }}
-              <span v-if="logData.ip_location" class="text-muted-foreground font-normal">({{ logData.ip_location }})</span>
             </span>
           </ElDescriptionsItem>
 
-          <ElDescriptionsItem label="触发时间">
+          <ElDescriptionsItem label="操作时间">
             <span class="font-mono text-xs text-muted-foreground">
-              {{ logData.created_at ? new Date(logData.created_at).toLocaleString() : '-' }}
+              {{ logData.createdTime || '-' }}
             </span>
           </ElDescriptionsItem>
 
-          <ElDescriptionsItem v-if="logData.request_path" label="请求路径" :span="2">
+          <ElDescriptionsItem v-if="logData.targetTable" label="目标数据表">
             <span class="font-mono text-xs text-primary font-medium">
-              {{ logData.request_path }}
+              {{ logData.targetTable }}
             </span>
           </ElDescriptionsItem>
 
-          <ElDescriptionsItem v-if="logData.user_agent" label="User Agent" :span="2">
-            <div class="font-mono text-xs text-muted-foreground break-all line-clamp-2" :title="logData.user_agent">
-              {{ logData.user_agent }}
-            </div>
+          <ElDescriptionsItem v-if="logData.targetId" label="目标记录 ID">
+            <span class="font-mono text-xs text-foreground font-medium">
+              #{{ logData.targetId }}
+            </span>
           </ElDescriptionsItem>
         </ElDescriptions>
       </ElCard>
 
-      <!-- 请求参数 JSON 展示区 -->
+      <!-- 变更详情快照 JSON 展示区 -->
       <ElCard class="!border border-border/60 !rounded-xl shadow-xs" body-class="p-4">
         <div class="flex items-center justify-between mb-2">
           <div class="text-xs font-bold text-foreground/80 uppercase tracking-wider flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-            请求入参 (Params / Body)
+            变更详情快照 (Detail Snapshot)
           </div>
           <ElButton
-            v-if="logData.params"
+            v-if="logData.detail"
             size="small"
             link
             type="primary"
             class="!text-xs"
-            @click="copyToClipboard(formatJson(logData.params))"
+            @click="copyToClipboard(formatJson(logData.detail))"
           >
-            复制 JSON
+            复制快照
           </ElButton>
         </div>
-        <div class="bg-muted/50 rounded-lg p-3 border border-border/40 font-mono text-xs text-foreground overflow-x-auto">
-          <pre class="whitespace-pre-wrap break-all leading-relaxed">{{ formatJson(logData.params) }}</pre>
-        </div>
-      </ElCard>
-
-      <!-- 响应结果 JSON / 错误信息区 -->
-      <ElCard class="!border border-border/60 !rounded-xl shadow-xs" body-class="p-4">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-xs font-bold text-foreground/80 uppercase tracking-wider flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
-            响应数据 (Response / Exception)
-          </div>
-          <ElButton
-            v-if="logData.result"
-            size="small"
-            link
-            type="primary"
-            class="!text-xs"
-            @click="copyToClipboard(formatJson(logData.result))"
-          >
-            复制 JSON
-          </ElButton>
-        </div>
-        <div class="bg-muted/50 rounded-lg p-3 border border-border/40 font-mono text-xs text-foreground overflow-x-auto">
-          <pre class="whitespace-pre-wrap break-all leading-relaxed">{{ formatJson(logData.result) }}</pre>
+        <div class="bg-muted/50 rounded-lg p-3 border border-border/40 font-mono text-xs text-foreground overflow-x-auto max-h-96">
+          <pre class="whitespace-pre-wrap break-all leading-relaxed">{{ formatJson(logData.detail || '无附加快照数据') }}</pre>
         </div>
       </ElCard>
     </div>
@@ -213,3 +213,4 @@ defineExpose({ open });
   font-size: 12px;
 }
 </style>
+

@@ -1,7 +1,7 @@
 ---
 name: 后台管理系统 API 接口规范
-description: FastAPI 后端接口对接规范、统一响应结构、Token 鉴权、用户与后台人员管理 CRUD 接口定义与前端调用标准。
-keywords: admin api, fastapi, users, admin-users, response format, token, request, crud
+description: FastAPI 后端接口对接规范、统一响应结构、Token 鉴权、用户/后台人员/轮播图/课程/操作日志 CRUD 接口定义与前端调用标准。
+keywords: admin api, fastapi, users, admin-users, banners, courses, operation-logs, response format, token, request, crud
 ---
 
 # Admin API 接口与集成规范
@@ -23,7 +23,7 @@ keywords: admin api, fastapi, users, admin-users, response format, token, reques
 }
 ```
 
-### 分页列表响应结构 (Page Response)
+### 分页列表响应结构 (Page / List Response)
 ```json
 {
   "code": 200,
@@ -54,25 +54,42 @@ keywords: admin api, fastapi, users, admin-users, response format, token, reques
 完整 OpenAPI 格式规范文档参见 `http://localhost:8000/openapi.json`。
 
 ### 认证接口 (Authentication)
-- **POST `/admin/login`**：管理员登录（参数：`phone`, `password`）
-- **GET `/admin/me`**：获取当前登录管理员/教师个人信息
-- **PUT `/admin/profile`**：更新当前登录管理员个人信息
-- **POST `/admin/change-password`**：修改当前登录管理员密码
+- **POST `/admin/login`**：管理员/教师登录（入参：`phone`, `password`；出参：`accessToken`, `roles`, `adminId`）
+- **GET `/admin/me`**：获取当前登录后台用户信息
+- **PUT `/admin/profile`**：修改当前登录用户个人资料（入参：`phone`, `avatar`, `remark`, `category`）
+- **POST `/admin/change-password`**：修改当前登录用户密码（入参：`oldPassword`, `newPassword`, `confirmPassword`）
 
 ### 用户管理接口 (User Management - 前台普通用户)
 - **GET `/admin/users/`**：[管理员] 分页及条件检索用户列表（参数：`phone`, `username`, `page/pageNum`, `pageSize/limit`）
-- **POST `/admin/users/`**：[管理员] 创建新用户（参数：`phone`, `password`, `username`, `email`, `id_card`, `gender`, `address`, `roles`）
+- **POST `/admin/users/`**：[管理员] 创建新用户（入参：`phone`, `password`, `username`, `email`, `idCard`, `gender`, `address`, `avatar`）
 - **GET `/admin/users/{user_id}`**：[管理员] 获取指定用户详情
-- **PUT `/admin/users/{user_id}`**：[管理员] 更新指定用户信息 (可修改 `is_active` 状态)
+- **PUT `/admin/users/{user_id}`**：[管理员] 更新指定用户信息 (入参支持修改 `isActive` 状态)
 - **DELETE `/admin/users/{user_id}`**：[管理员] 删除用户
 - **POST `/admin/users/batch`**：[管理员] 批量导入用户
 
 ### 人员管理接口 (Staff Management - 后台管理/教职人员)
-- **GET `/admin/admin-users/`**：[管理员] 分页及条件检索后台人员列表（参数：`phone`, `employee_no`, `status`, `page/pageNum`, `pageSize/limit`）
-- **POST `/admin/admin-users/`**：[管理员] 创建后台人员（参数：`phone`, `employee_no`, `password`, `roles`, `category`, `remark`, `status`）
+- **GET `/admin/admin-users/`**：[管理员] 分页及条件检索后台人员列表（参数：`phone`, `employeeNo`, `status`, `page/pageNum`, `pageSize/limit`）
+- **POST `/admin/admin-users/`**：[管理员] 创建后台人员（入参：`phone`, `employeeNo`, `password`, `roles`, `category`, `remark`, `status`）
 - **GET `/admin/admin-users/{admin_id}`**：[管理员] 获取指定后台人员详情
-- **PUT `/admin/admin-users/{admin_id}`**：[管理员] 更新后台人员信息（支持工号、角色、部门、状态等全量/增量更新）
+- **PUT `/admin/admin-users/{admin_id}`**：[管理员] 更新后台人员信息（支持工号 `employeeNo`、角色、部门、状态等全量/增量更新）
 - **DELETE `/admin/admin-users/{admin_id}`**：[管理员] 删除后台人员
+
+### 轮播图管理接口 (Banner Management)
+- **GET `/admin/banners/`**：[管理员] 获取所有轮播图列表（含停用）
+- **POST `/admin/banners/`**：[管理员] 新建广告轮播图（入参：`imageUrl`, `title`, `targetUrl`, `sortOrder`, `isActive`）
+- **PUT `/admin/banners/{banner_id}`**：[管理员] 编辑轮播图（记录操作审计日志）
+- **DELETE `/admin/banners/{banner_id}`**：[管理员] 删除轮播图（记录操作审计日志）
+
+### 课程管理与考勤接口 (Course & Checkin Management)
+- **GET `/admin/courses/`**：[管理员] 分页查询课程列表（参数：`status`, `pageNum`, `pageSize`）
+- **POST `/admin/courses/`**：[管理员] 发布新课程（入参：`title`, `address`, `startTime`, `endTime`, `content`, `teacherId`, `maxCapacity`, `status`）
+- **PUT `/admin/courses/{course_id}`**：[管理员] 编辑课程信息（记录操作审计日志）
+- **DELETE `/admin/courses/{course_id}`**：[管理员] 删除课程（记录操作审计日志）
+- **GET `/admin/courses/{course_id}/checkins`**：[管理员/教师] 查看课程学员签到核验名册
+- **POST `/admin/courses/reservations/{reservation_id}/teacher-checkin`**：[管理员/教师] 手动代学员完成打卡
+
+### 安全审计日志接口 (Operation Logs)
+- **GET `/admin/operation-logs/`**：[管理员] 分页及模块检索系统操作审计日志（出参：`id`, `operatorType`, `operatorId`, `operatorName`, `module`, `action`, `targetTable`, `targetId`, `detail`, `ip`, `createdTime`）
 
 ---
 
@@ -81,23 +98,4 @@ keywords: admin api, fastapi, users, admin-users, response format, token, reques
 ### 请求拦截器规约 ([src/api/request.ts](file:///Users/myself/Desktop/myself/hm-vben-admin/apps/web-ele/src/api/request.ts))
 1. **Token 携带**：所有受保护接口通过请求拦截器自动附加 `Authorization: Bearer <Token>`。
 2. **状态码校验**：基于 `defaultResponseInterceptor`，当 `code: 200` 时自动解包返回 `data` 节点。
-3. **Loading 联动**：支持在请求配置中开启 `loading: true` / `screen_loading: true` 自动管理全屏加载遮罩。
-
-### 前端 API 文件编写范式 ([src/api/users.ts](file:///Users/myself/Desktop/myself/hm-vben-admin/apps/web-ele/src/api/users.ts))
-```typescript
-import { requestClient } from '#/api/request';
-
-export interface UserItem {
-  id: number;
-  phone: string;
-  username?: string;
-  is_active?: boolean;
-  roles?: string[];
-}
-
-export async function getUsersApi(params?: Record<string, any>) {
-  return requestClient.get<{ items: UserItem[]; count: number }>('/admin/users/', {
-    params,
-  });
-}
-```
+3. **字段规范**：后端响应 DTO 统一输出小驼峰（`camelCase`）格式（如 `createdTime`, `isActive`, `employeeNo`, `operatorType`, `detail` 等）。

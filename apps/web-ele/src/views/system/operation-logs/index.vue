@@ -53,22 +53,6 @@ function getModuleTagType(moduleName?: string) {
   if (moduleName.includes(' Banner') || moduleName.includes('轮播')) return 'danger';
   return 'info';
 }
-
-/** HTTP 请求 Method Tag 颜色 */
-function getMethodTagType(method?: string) {
-  switch ((method || '').toUpperCase()) {
-    case 'GET':
-      return 'success';
-    case 'POST':
-      return 'primary';
-    case 'PUT':
-      return 'warning';
-    case 'DELETE':
-      return 'danger';
-    default:
-      return 'info';
-  }
-}
 </script>
 
 <template>
@@ -131,7 +115,7 @@ function getMethodTagType(method?: string) {
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="module" label="操作模块" width="140">
+        <ElTableColumn prop="module" label="业务模块" width="130">
           <template #default="{ row }">
             <ElTag
               :type="getModuleTagType(row.module)"
@@ -139,39 +123,42 @@ function getMethodTagType(method?: string) {
               effect="light"
               class="!rounded-md font-medium"
             >
-              {{ row.module || '未定义模块' }}
+              {{ row.module || '通用模块' }}
             </ElTag>
           </template>
         </ElTableColumn>
 
-        <ElTableColumn label="操作内容 / 动作" min-width="200" show-overflow-tooltip>
+        <ElTableColumn label="操作动作 / 变更内容" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">
-            <div class="flex items-center gap-2">
-              <ElTag
-                v-if="row.method"
-                :type="getMethodTagType(row.method)"
-                size="small"
-                effect="plain"
-                class="!rounded-md font-mono text-[10px]"
-              >
-                {{ row.method }}
-              </ElTag>
-              <span class="text-sm font-medium text-foreground">
-                {{ row.operation || row.action || '系统业务变更' }}
+            <span class="text-sm font-medium text-foreground">
+              {{ row.action || '系统业务变更' }}
+            </span>
+          </template>
+        </ElTableColumn>
+
+        <ElTableColumn label="操作人员" width="150">
+          <template #default="{ row }">
+            <div class="flex flex-col">
+              <span class="text-xs font-medium text-foreground">
+                {{ row.operatorName || (row.operatorId ? `ID #${row.operatorId}` : '系统人员') }}
+              </span>
+              <span v-if="row.operatorType !== undefined" class="text-[11px] text-muted-foreground">
+                {{ row.operatorType === 1 ? '管理员' : (row.operatorType === 2 ? '前台学员' : '系统自动') }}
               </span>
             </div>
           </template>
         </ElTableColumn>
 
-        <ElTableColumn label="操作人员" width="140">
+        <ElTableColumn label="目标对象" width="130" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs font-medium text-foreground">
-              {{ row.operator_name || row.operator || (row.admin_id ? `Admin #${row.admin_id}` : '系统人员') }}
+            <span v-if="row.targetTable" class="text-xs font-mono text-muted-foreground">
+              {{ row.targetTable }}<span v-if="row.targetId"> #{{ row.targetId }}</span>
             </span>
+            <span v-else class="text-xs text-muted-foreground/60">-</span>
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="ip" label="客户端 IP" width="130">
+        <ElTableColumn prop="ip" label="客户端 IP" width="125">
           <template #default="{ row }">
             <span class="text-xs font-mono text-muted-foreground">
               {{ row.ip || '127.0.0.1' }}
@@ -179,30 +166,15 @@ function getMethodTagType(method?: string) {
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="status_code" label="响应状态" width="100" align="center">
-          <template #default="{ row }">
-            <ElTag
-              v-if="row.status_code"
-              :type="row.status_code >= 200 && row.status_code < 300 ? 'success' : 'danger'"
-              size="small"
-              effect="light"
-              class="!rounded-md font-mono"
-            >
-              {{ row.status_code }}
-            </ElTag>
-            <span v-else class="text-xs text-muted-foreground">-</span>
-          </template>
-        </ElTableColumn>
-
-        <ElTableColumn prop="created_at" label="操作时间" width="170" show-overflow-tooltip>
+        <ElTableColumn prop="createdTime" label="操作时间" width="170" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs font-mono text-muted-foreground">
-              {{ row.created_at ? new Date(row.created_at).toLocaleString() : '-' }}
+              {{ row.createdTime || '-' }}
             </span>
           </template>
         </ElTableColumn>
 
-        <ElTableColumn label="操作" width="100" align="center" fixed="right">
+        <ElTableColumn label="操作" width="95" align="center" fixed="right">
           <template #default="{ row }">
             <ElButton
               type="primary"

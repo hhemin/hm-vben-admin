@@ -35,11 +35,11 @@ const initialForm = {
   username: '',
   password: '',
   email: '',
-  id_card: '',
+  idCard: '',
   gender: 0,
   address: '',
   roles: ['user'],
-  is_active: true,
+  isActive: true,
 };
 
 const rules: FormRules = {
@@ -72,7 +72,7 @@ const rules: FormRules = {
       trigger: 'blur',
     },
   ],
-  id_card: [
+  idCard: [
     {
       validator: (_rule, value, callback) => {
         if (value && !ID_CARD_REGEX.test(value)) {
@@ -107,11 +107,11 @@ function open(row?: UserItem) {
       username: row.username || '',
       password: '',
       email: row.email || '',
-      id_card: row.id_card || '',
+      idCard: row.idCard || '',
       gender: row.gender ?? 0,
       address: row.address || '',
       roles: row.roles && row.roles.length ? row.roles : ['user'],
-      is_active: row.is_active ?? true,
+      isActive: row.isActive ?? true,
     });
   } else {
     isEdit.value = false;
@@ -223,9 +223,9 @@ defineExpose({
 
       <ElRow :gutter="20">
         <ElCol :span="12">
-          <ElFormItem label="身份证号" prop="id_card">
+          <ElFormItem label="身份证号" prop="idCard">
             <ElInput
-              v-model="formModel.id_card"
+              v-model="formModel.idCard"
               placeholder="请输入身份证号码"
               clearable
             />
@@ -263,9 +263,9 @@ defineExpose({
         </ElCol>
 
         <ElCol :span="12">
-          <ElFormItem label="账号状态" prop="is_active">
+          <ElFormItem label="账号状态" prop="isActive">
             <ElSwitch
-              v-model="formModel.is_active"
+              v-model="formModel.isActive"
               inline-prompt
               active-text="启用"
               inactive-text="禁用"

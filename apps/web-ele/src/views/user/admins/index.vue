@@ -44,7 +44,7 @@ const {
 } = useTable<AdminUserItem>(getAdminUsersApi, {
   defaultParams: {
     phone: '',
-    employee_no: '',
+    employeeNo: '',
     status: undefined,
   },
 });
@@ -64,7 +64,7 @@ async function onDelete(row: any) {
     () => deleteAdminUserApi(row.id),
     {
       title: '删除人员确认',
-      content: `确定要删除后台人员 [工号: ${row.employee_no} / 手机: ${row.phone}] 吗？此操作无法撤销！`,
+      content: `确定要删除后台人员 [工号: ${row.employeeNo} / 手机: ${row.phone}] 吗？此操作无法撤销！`,
     },
   );
   if (ok) {
@@ -77,7 +77,7 @@ function onSwitchStatus(row: any) {
     (id, val) => updateAdminUserApi(id, { status: val }),
     row,
     'status',
-    `人员 [${row.employee_no}] 账号已${row.status === 1 ? '启用' : '禁用'}`,
+    `人员 [${row.employeeNo}] 账号已${row.status === 1 ? '启用' : '禁用'}`,
   );
 }
 
@@ -106,7 +106,7 @@ function getAvatarBg(name?: string) {
       <ElForm :inline="true" :model="queryParams" class="flex flex-wrap items-center gap-y-2">
         <ElFormItem label="员工工号" class="!mb-0">
           <ElInput
-            v-model="queryParams.employee_no"
+            v-model="queryParams.employeeNo"
             placeholder="搜索员工工号"
             clearable
             class="w-48"
@@ -188,13 +188,13 @@ function getAvatarBg(name?: string) {
               <ElAvatar
                 :size="38"
                 :src="row.avatar"
-                :style="{ background: getAvatarBg(row.employee_no || row.phone), color: '#fff', fontWeight: 600 }"
+                :style="{ background: getAvatarBg(row.employeeNo || row.phone), color: '#fff', fontWeight: 600 }"
               >
-                {{ row.employee_no ? row.employee_no.slice(0, 2).toUpperCase() : 'A' }}
+                {{ row.employeeNo ? row.employeeNo.slice(0, 2).toUpperCase() : 'A' }}
               </ElAvatar>
               <div class="flex flex-col">
                 <span class="font-bold text-foreground text-sm leading-tight font-mono tracking-wide">
-                  {{ row.employee_no }}
+                  {{ row.employeeNo }}
                 </span>
                 <span class="text-xs text-muted-foreground font-mono mt-0.5">
                   {{ row.phone }}
@@ -250,10 +250,10 @@ function getAvatarBg(name?: string) {
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="created_at" label="创建时间" min-width="170" show-overflow-tooltip>
+        <ElTableColumn prop="createdTime" label="创建时间" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs font-mono text-muted-foreground">
-              {{ row.created_at ? new Date(row.created_at).toLocaleString() : '-' }}
+              {{ row.createdTime ? new Date(row.createdTime).toLocaleString() : '-' }}
             </span>
           </template>
         </ElTableColumn>

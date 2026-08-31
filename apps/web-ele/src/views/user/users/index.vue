@@ -71,10 +71,10 @@ async function onDelete(row: any) {
 
 function onSwitchStatus(row: any) {
   handleStatusChange(
-    (id, val) => updateUserApi(id, { is_active: val }),
+    (id, val) => updateUserApi(id, { isActive: val }),
     row,
-    'is_active',
-    `用户 [${row.username || row.phone}] 状态已${row.is_active ? '启用' : '禁用'}`,
+    'isActive',
+    `用户 [${row.username || row.phone}] 状态已${row.isActive ? '启用' : '禁用'}`,
   );
 }
 
@@ -244,10 +244,10 @@ function getAvatarBg(name?: string) {
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="is_active" label="状态" width="100" align="center">
+        <ElTableColumn prop="isActive" label="状态" width="100" align="center">
           <template #default="{ row }">
             <ElSwitch
-              v-model="row.is_active"
+              v-model="row.isActive"
               inline-prompt
               active-text="启"
               inactive-text="禁"
@@ -256,10 +256,10 @@ function getAvatarBg(name?: string) {
           </template>
         </ElTableColumn>
 
-        <ElTableColumn prop="created_at" label="注册时间" min-width="170" show-overflow-tooltip>
+        <ElTableColumn prop="createdTime" label="注册时间" min-width="170" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs font-mono text-muted-foreground">
-              {{ row.created_at ? new Date(row.created_at).toLocaleString() : '-' }}
+              {{ row.createdTime ? new Date(row.createdTime).toLocaleString() : '-' }}
             </span>
           </template>
         </ElTableColumn>

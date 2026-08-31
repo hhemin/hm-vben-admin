@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       loginLoading.value = true;
       const res = await loginApi(params);
-      const token = res.access_token || res.accessToken;
+      const token = res.accessToken;
 
       // 如果成功获取到 accessToken
       if (token) {
@@ -59,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
             realName: res.phone || 'Admin',
             roles: res.roles || ['admin'],
             token,
-            userId: String(res.admin_id || 1),
+            userId: String(res.adminId || 1),
             username: res.phone || 'Admin',
           } as UserInfo;
           userStore.setUserInfo(userInfo);
@@ -120,10 +120,10 @@ export const useAuthStore = defineStore('auth', () => {
         'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
       desc: rawUserInfo?.remark || '',
       homePath: preferences.app.defaultHomePath,
-      realName: rawUserInfo?.employee_no || rawUserInfo?.phone || 'Admin',
+      realName: rawUserInfo?.employeeNo || rawUserInfo?.phone || 'Admin',
       roles: rawUserInfo?.roles || ['admin'],
       token: accessStore.accessToken || '',
-      userId: String(rawUserInfo?.id || rawUserInfo?.admin_id || ''),
+      userId: String(rawUserInfo?.id || rawUserInfo?.adminId || ''),
       username: rawUserInfo?.phone || '',
       ...rawUserInfo,
     };

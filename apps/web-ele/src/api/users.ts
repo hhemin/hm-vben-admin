@@ -1,18 +1,21 @@
 import { requestClient } from '#/api/request';
 
+/**
+ * 前台普通用户数据模型（对应后端 UserOut 契约）
+ */
 export interface UserItem {
   id: number;
   phone: string;
   username?: string;
   email?: string;
-  id_card?: string;
+  idCard?: string;
   gender?: number; // 0=未知, 1=男, 2=女
   address?: string;
   avatar?: string;
-  is_active?: boolean;
+  isActive?: boolean;
   roles?: string[];
-  created_at?: string;
-  updated_at?: string;
+  createdTime?: string;
+  updatedTime?: string;
 }
 
 export interface UserQueryParams {
@@ -27,26 +30,28 @@ export interface UserQueryParams {
 export interface UserCreatePayload {
   phone: string;
   password: string;
-  username?: string;
-  email?: string;
-  id_card?: string;
-  gender?: number;
-  address?: string;
-  avatar?: string;
-  roles?: string[];
+  username?: string | null;
+  email?: string | null;
+  idCard?: string | null;
+  gender?: number | null;
+  address?: string | null;
+  avatar?: string | null;
 }
 
 export interface UserUpdatePayload {
-  phone?: string;
-  password?: string;
-  username?: string;
-  email?: string;
-  id_card?: string;
-  gender?: number;
-  address?: string;
-  avatar?: string;
-  is_active?: boolean;
-  roles?: string[];
+  phone?: string | null;
+  password?: string | null;
+  username?: string | null;
+  email?: string | null;
+  idCard?: string | null;
+  gender?: number | null;
+  address?: string | null;
+  avatar?: string | null;
+  isActive?: boolean | null;
+}
+
+export interface UserBatchImportPayload {
+  users: UserCreatePayload[];
 }
 
 /**

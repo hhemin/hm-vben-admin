@@ -35,7 +35,7 @@ const formRef = ref<FormInstance | null>(null);
 
 const initialForm = {
   phone: '',
-  employee_no: '',
+  employeeNo: '',
   password: '',
   roles: ['admin'],
   category: '',
@@ -44,7 +44,7 @@ const initialForm = {
 };
 
 const rules: FormRules = {
-  employee_no: [
+  employeeNo: [
     { required: true, message: '请输入员工工号', trigger: 'blur' },
     {
       pattern: EMPLOYEE_NO_REGEX,
@@ -94,7 +94,7 @@ function open(row?: AdminUserItem) {
     currentId.value = row.id;
     setFormModel({
       phone: row.phone || '',
-      employee_no: row.employee_no || '',
+      employeeNo: row.employeeNo || '',
       password: '',
       roles: row.roles && row.roles.length ? row.roles : ['admin'],
       category: row.category || '',
@@ -161,9 +161,9 @@ defineExpose({
     >
       <ElRow :gutter="20">
         <ElCol :span="12">
-          <ElFormItem label="员工工号" prop="employee_no">
+          <ElFormItem label="员工工号" prop="employeeNo">
             <ElInput
-              v-model="formModel.employee_no"
+              v-model="formModel.employeeNo"
               placeholder="例如: EMP001 / A1001"
               clearable
             />

@@ -1,16 +1,19 @@
 import { requestClient } from '#/api/request';
 
+/**
+ * 后台人员数据模型（对应后端 AdminUserOut 契约）
+ */
 export interface AdminUserItem {
   id: number;
   phone: string;
-  employee_no: string;
+  employeeNo: string;
   roles?: string[];
-  avatar?: string;
-  remark?: string;
-  category?: string;
+  avatar?: string | null;
+  remark?: string | null;
+  category?: string | null;
   status: number; // 1=启用, 0=禁用
-  created_at?: string;
-  updated_at?: string;
+  createdTime?: string;
+  updatedTime?: string;
 }
 
 export interface AdminUserQueryParams {
@@ -19,30 +22,30 @@ export interface AdminUserQueryParams {
   pageNum?: number;
   limit?: number;
   phone?: string;
-  employee_no?: string;
+  employeeNo?: string;
   status?: number;
 }
 
 export interface AdminUserCreatePayload {
   phone: string;
-  employee_no: string;
   password: string;
+  employeeNo: string;
   roles?: string[];
-  avatar?: string;
-  remark?: string;
-  category?: string;
-  status?: number;
+  avatar?: string | null;
+  remark?: string | null;
+  category?: string | null;
+  status?: number | null;
 }
 
 export interface AdminUserUpdatePayload {
-  phone?: string;
-  employee_no?: string;
-  password?: string;
+  phone?: string | null;
+  password?: string | null;
+  employeeNo?: string | null;
   roles?: string[];
-  avatar?: string;
-  remark?: string;
-  category?: string;
-  status?: number;
+  avatar?: string | null;
+  remark?: string | null;
+  category?: string | null;
+  status?: number | null;
 }
 
 /**

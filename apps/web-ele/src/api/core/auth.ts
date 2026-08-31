@@ -10,12 +10,11 @@ export namespace AuthApi {
 
   /** 登录接口返回值 */
   export interface LoginResult {
-    access_token: string;
-    accessToken?: string;
-    admin_id?: number;
+    accessToken: string;
+    tokenType?: string;
+    adminId?: number;
     phone?: string;
     roles?: string[];
-    token_type?: string;
   }
 
   export interface RefreshTokenResult {
