@@ -99,3 +99,30 @@ keywords: admin api, fastapi, users, admin-users, banners, courses, operation-lo
 1. **Token 携带**：所有受保护接口通过请求拦截器自动附加 `Authorization: Bearer <Token>`。
 2. **状态码校验**：基于 `defaultResponseInterceptor`，当 `code: 200` 时自动解包返回 `data` 节点。
 3. **字段规范**：后端响应 DTO 统一输出小驼峰（`camelCase`）格式（如 `createdTime`, `isActive`, `employeeNo`, `operatorType`, `detail` 等）。
+
+---
+
+## 4. 接口更新与演进规范 (API Evolution & Type Mutation Rules)
+
+针对管理后台庞大多变的业务模块体系，必须严格遵守以下**更新准则与标准维护工作流**：
+
+### 4.1 核心决策准则
+
+1. **Type 变化驱动原则 (Type-Driven Mutation)**：
+   - **仅当 Type 类型/契约发生实质变更时才修改代码**：包括字段重命名（如 snake_case 转 camelCase）、属性增删、字段类型变更或必填项调整。
+   - **无变动不触碰**：若接口 URL 或内部业务逻辑未引起入参/出参 Schema 变化，严禁随意修改现有稳态的 `api/*.ts` 接口及业务视图。
+2. **零冗余别名规约 (Zero Redundant Aliases)**：
+   - 彻底拒绝历史兼容别名（如 `employee_no?: string`、`is_active?: boolean` 等）。
+   - TypeScript 类型定义必须与后端 OpenAPI 契约 **1:1 严格对齐**，确保类型系统纯净可靠。
+3. **高内聚业务模块化 (High-Cohesion Modularization)**：
+   - 接口按业务域独立拆分文件（`api/<module>.ts`，如 `users.ts`, `courses.ts`, `admin-users.ts`, `operation-logs.ts`），严禁巨石单体堆砌。
+   - 基础公共设施归入 `core/`（如 `auth.ts`, `user.ts`, `menu.ts`）。
+
+### 4.2 接口更新 4 步标准工作流
+
+```text
+[Step 1 契约比对] ➔ 比对 http://localhost:8000/openapi.json 与本地 api/*.ts 类型差异
+[Step 2 类型重构] ➔ 仅在 Type 变动时，就地修改对应业务模块的 Payload 及 Item Interface
+[Step 3 视图同步] ➔ 全局检索并级联更新受影响的 View 组件（表单 prop、表格 column、v-model）及 Store 状态
+[Step 4 编译校验] ➔ 执行 `vue-tsc --noEmit --skipLibCheck` 确保 0 Error 闭环
+```

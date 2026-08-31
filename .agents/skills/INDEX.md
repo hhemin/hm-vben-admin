@@ -17,7 +17,7 @@ description: hm-vben-admin 技能目录导航，快速定位各领域 Skill。�
 <!-- SKILLS_START -->
 | 技能名称 (领域) | 适用场景与核心职责 | 触发关键词 | Skill 路径 |
 | :--- | :--- | :--- | :--- |
-| **后台管理系统 API 接口规范** | FastAPI 后端接口对接、统一响应结构解析、Token 鉴权与请求拦截、用户/人员/认证 CRUD 调用规范 | `admin api`, `fastapi`, `users`, `admin-users`, `response format`, `token`, `request`, `crud` | [.agents/skills/admin-api/SKILL.md](file:///.agents/skills/admin-api/SKILL.md) |
+| **后台管理系统 API 接口规范** | FastAPI 后端接口对接、统一响应结构解析、Token 鉴权与请求拦截、多业务模块 CRUD 对齐、Type 类型变化驱动更新准则与标准演进规范 | `admin api`, `fastapi`, `users`, `admin-users`, `banners`, `courses`, `operation-logs`, `response format`, `token`, `request`, `crud`, `api update`, `type check` | [.agents/skills/admin-api/SKILL.md](file:///.agents/skills/admin-api/SKILL.md) |
 | **Skill 创建与演进决策规范** | AI 与开发者创建及演进 Skill 的流程规范。强调优先合并归纳、保护第三方依赖、软件工程解耦分类及精简提炼 | `create skill`, `skill creation`, `skill governance`, `merge skill`, `software engineering`, `decoupling` | [.agents/skills/skill-creation/SKILL.md](file:///.agents/skills/skill-creation/SKILL.md) |
 | **前端标准页面布局规范** | Element Plus / Vue3 页面布局与创建规范。包含新页面创建流程与 Token 优化（4 件套固定路径）、表格列表 CRUD、Dialog/Drawer 模式确认、`components/` 子目录规范及 `useTable`/`useForm`/`useDelete` Hooks | `layout`, `create page`, `token optimization`, `table`, `crud`, `list`, `page`, `form`, `element-plus`, `vue3`, `useTable`, `useForm`, `useDelete`, `dialog`, `drawer` | [.agents/skills/layout/SKILL.md](file:///.agents/skills/layout/SKILL.md) |
 | **前端现代界面设计规范** | 企业级 UI/UX 现代视觉体系、Slate 中性灰阶、微阴影微圆角、表格/表单/卡片布局与侧边栏样式标准 | `frontend design`, `ui`, `ux`, `element-plus`, `styles`, `layout`, `theme`, `table`, `form` | [.agents/skills/Frontend-Design/SKILL.md](file:///.agents/skills/Frontend-Design/SKILL.md) |
