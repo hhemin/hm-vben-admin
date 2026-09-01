@@ -107,7 +107,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     return token ? `Bearer ${token}` : null;
   }
 
-  // 请求头及 Loading 拦截
+  // 1. 请求头及 Loading 开启拦截器
   client.addRequestInterceptor({
     fulfilled: async (config) => {
       const accessStore = useAccessStore();
@@ -116,10 +116,10 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       config.headers['Accept-Language'] = preferences.app.locale;
 
       // 支持配置 loading / screen_loading 参数
-      if ((config as any).loading || (config as any).screen_loading) {
+      if ((config as any)?.loading || (config as any)?.screen_loading) {
         startLoading({
-          target: (config as any).loadingTarget,
-          text: (config as any).loadingText,
+          target: (config as any)?.loadingTarget,
+          text: (config as any)?.loadingText,
         });
       }
 
@@ -131,16 +131,29 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     },
   });
 
-  // 处理返回的响应数据格式
-  client.addResponseInterceptor(
-    defaultResponseInterceptor({
-      codeField: 'code',
-      dataField: 'data',
-      successCode: 200,
-    }),
-  );
+  // 2. 响应拦截器：关闭 Loading（在任何数据解构前执行，保证拿到的是完整的 AxiosResponse）
+  client.addResponseInterceptor({
+    fulfilled: async (response) => {
+      if (
+        (response as any)?.config?.loading ||
+        (response as any)?.config?.screen_loading
+      ) {
+        endLoading();
+      }
+      return response;
+    },
+    rejected: async (error) => {
+      if (
+        (error as any)?.config?.loading ||
+        (error as any)?.config?.screen_loading
+      ) {
+        endLoading();
+      }
+      return Promise.reject(error);
+    },
+  });
 
-  // token过期的处理
+  // 3. 响应拦截器：HTTP 401 刷新 token 处理
   client.addResponseInterceptor(
     authenticateResponseInterceptor({
       client,
@@ -151,8 +164,15 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     }),
   );
 
-  // 业务 code 401 (如 {"code":401,"msg":"token已过期","data":null}) token过期处理
+  // 4. 响应拦截器：业务 code 401 (如 {"code":401,"msg":"token已过期","data":null}) token过期处理
   client.addResponseInterceptor({
+    fulfilled: async (response) => {
+      const responseData = response?.data;
+      if (responseData?.code === 401) {
+        await doReAuthenticate();
+      }
+      return response;
+    },
     rejected: async (error) => {
       const responseData = error?.response?.data;
       const status = error?.response?.status;
@@ -165,29 +185,16 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     },
   });
 
-  // 响应结束关闭 Loading
-  client.addResponseInterceptor({
-    fulfilled: async (response) => {
-      if (
-        (response.config as any)?.loading ||
-        (response.config as any)?.screen_loading
-      ) {
-        endLoading();
-      }
-      return response;
-    },
-    rejected: async (error) => {
-      if (
-        (error?.config as any)?.loading ||
-        (error?.config as any)?.screen_loading
-      ) {
-        endLoading();
-      }
-      return Promise.reject(error);
-    },
-  });
+  // 5. 响应拦截器：处理返回的响应数据格式（解包 data，检验 successCode）
+  client.addResponseInterceptor(
+    defaultResponseInterceptor({
+      codeField: 'code',
+      dataField: 'data',
+      successCode: (code: any) => code === 200 || code === 0 || code === '200',
+    }),
+  );
 
-  // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
+  // 6. 响应拦截器：通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(
     errorMessageResponseInterceptor((msg: string, error) => {
       const responseData = error?.response?.data ?? {};
